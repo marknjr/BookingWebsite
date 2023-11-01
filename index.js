@@ -9,10 +9,10 @@ const app = express();
 const port = 8000;
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Set up css
+//    Set up css
 app.use(express.static(__dirname + "/public"));
 
-// Define the database connection
+// Define the database connections
 const db = mysql.createConnection({
   host: "localhost",
   user: "appuser",
