@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Welcome to <%=shopName%></title>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+  </head>
+  <body>
+    <h1><%=shopName%> Shop</h1>
+    <h2>Here are the events we host:</h2>
+    <ul>
+      <% events.forEach(function(event) { %>
+      <li><%= event.eventType %>, £<%=event.price%></li>
+      <% }) %>
+    </ul>
+  </body>
+</html>

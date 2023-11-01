@@ -1,0 +1,52 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto&display=swap"); /* Using Google Fonts for decorative and readable fonts */
+
+body {
+  font-family: "Roboto", sans-serif;
+  background-color: #f4f4f9; /* Soft background color to provide contrast */
+  line-height: 1.6;
+}
+
+h1 {
+  font-family: "Playfair Display", serif;
+  font-size: 28px;
+  color: #2e8b57; /* Forest Green */
+  border-bottom: 2px solid #2e8b57;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+}
+
+h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 24px;
+  color: #4682b4; /* Steel Blue */
+  margin-bottom: 15px;
+}
+
+p,
+li {
+  font-size: 16px;
+  color: #555; /* Darker text for better readability */
+}
+
+a:link,
+a:visited {
+  color: #ff4500; /* Orangered */
+  text-decoration: none;
+  padding: 5px 10px; /* Increased horizontal padding for better button-like feel */
+  border-radius: 5px; /* Rounded edges for a softer feel */
+  transition: all 0.3s ease; /* Smooth transition for all properties */
+}
+
+a:hover {
+  color: white;
+  background-color: #ff4500;
+  text-shadow: 1px 1px 2px #333; /* Slight shadow for a 3D pop */
+}
+
+a:active {
+  color: #ff6347; /* Lighter shade of red */
+  background-color: #eee;
+  border: 1px solid #ff4500;
+}
+
+/* Additional classes and styles for layout and other elements could be added below */

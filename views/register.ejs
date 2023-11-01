@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Register for <%=shopName%></title>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+  </head>
+  <body>
+    <h1>Register for <%=shopName%></h1>
+    <form method="POST" action="/registered">
+      <p>
+        Email:
+        <input id="email" type="email" name="email" placeholder="email" />
+      </p>
+      <p>
+        Username:
+        <input
+          id="username"
+          type="text"
+          name="username"
+          placeholder="username"
+        />
+      </p>
+      <p>
+        Password:
+        <input
+          id="password"
+          type="password"
+          name="password"
+          placeholder="password"
+        />
+      </p>
+      <p>
+        name:
+        <input id="name" type="name" name="name" placeholder="name" />
+      </p>
+      <p>
+        Phone Number:
+        <input id="phone" type="phone" name="phone" placeholder="phone" />
+      </p>
+      <p>
+        Preffered payment method:
+        <input
+          id="preferredPaymentMethod"
+          type="preferredPaymentMethod"
+          name="preferredPaymentMethod"
+          placeholder="preferredPaymentMethod"
+        />
+      </p>
+      <input type="submit" value="Register" />
+    </form>
+  </body>
+</html>

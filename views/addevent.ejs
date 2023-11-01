@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Add event to <%=shopName%></title>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+  </head>
+  <body>
+    <h1><%=shopName%>: Add book</h1>
+    <form method="POST" action="/eventadded">
+      <p>
+        Event type: <input id="eventType" type="text" name="name" value="" />
+      </p>
+      <p>
+        instructor:
+        <input id="instructor_id" type="text" name="instructor_id" value="" />
+      </p>
+      <p>
+        Date: <input id="dateOfEvent" type="date" name="dateOfEvent" value="" />
+      </p>
+      <p>
+        Time: <input id="timeOfEvent" type="time" name="timeOfEvent" value="" />
+      </p>
+      <p>
+        Location: <input id="location" type="text" name="location" value="" />
+      </p>
+      <p>
+        Max Participants:
+        <input id="maxAttendees" type="text" name="maxAttendees" value="" />
+      </p>
+      <p>Price: <input id="price" type="text" name="price" value="" /></p>
+      <input type="submit" value="Add Event" />
+    </form>
+  </body>
+</html>
