@@ -6,12 +6,30 @@
   </head>
   <body>
     <h1>Welcome to <%=shopName%></h1>
+
+    <% if (isLoggedIn) { %>
+    <p>Logged in as <strong><%= username %></strong></p>
+    <% } else { %>
+    <p>Welcome, guest!</p>
+    <% } %>
+
     <p><a href="about">About <%=shopName%></a></p>
     <p><a href="search">Search for events</a></p>
+
+    <% if (isLoggedIn) { %>
+
     <p><a href="addevent">Add a new event</a></p>
     <p><a href="list">List events</a></p>
-    <p><a href="register">Register with us</a></p>
+
     <p><a href="listinstructors">List the instructors</a></p>
+
+    <p><a href="logout">Logout</a></p>
+
+    <% } else { %>
+
     <p><a href="login">Login!</a></p>
+    <p><a href="register">Register with us</a></p>
+
+    <% } %>
   </body>
 </html>

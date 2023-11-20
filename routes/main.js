@@ -1,6 +1,25 @@
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 module.exports = function (app, shopData) {
+  //redirects to login page if not logged in
+  const redirectLogin = (req, res, next) => {
+    if (!req.session.userId) {
+      res.redirect("./login");
+    } else {
+      next();
+    }
+  };
+
+  const addLoginStatus = (req, res, next) => {
+    res.locals.isLoggedIn = !!req.session.userId;
+    if (req.session.userId) {
+      res.locals.username = req.session.userId;
+    }
+    next();
+  };
+
+  app.use(addLoginStatus);
+
   // Handle our routes
   app.get("/", function (req, res) {
     res.render("index.ejs", shopData);
@@ -79,7 +98,6 @@ module.exports = function (app, shopData) {
 
   app.post("/loggedin", function (req, res) {
     const { username, password } = req.body;
-    //const plainPassword = req.body.password;
 
     const sql = "SELECT * FROM customer WHERE username = ?";
     db.query(sql, [username], function (error, results) {
@@ -94,24 +112,25 @@ module.exports = function (app, shopData) {
       }
 
       const user = results[0];
-      // Hash the password using bcrypt
-      // Compare the password supplied with the password in the database
       bcrypt.compare(password, user.hashedPassword, function (err, result) {
         if (err) {
           console.error(err);
-          return res.status(500).send("Error registering user.");
+          return res.status(500).send("Error during login.");
         } else if (result == true) {
           console.log("user logged in");
-          res.send("Login successful");
+          req.session.userId = req.body.username;
+
+          // Redirect to the homepage after successful login
+          res.redirect("/");
         } else {
-          // Password is incorrect
+          // incorrect pass
           res.status(401).send("Invalid username or password.");
         }
       });
     });
   });
 
-  app.get("/list", function (req, res) {
+  app.get("/list", redirectLogin, function (req, res) {
     let sqlquery = "SELECT * FROM event"; // query database to get all the books
     // execute sql query
     db.query(sqlquery, (err, result) => {
@@ -124,11 +143,11 @@ module.exports = function (app, shopData) {
     });
   });
 
-  app.get("/addevent", function (req, res) {
+  app.get("/addevent", redirectLogin, function (req, res) {
     res.render("addevent.ejs", shopData);
   });
 
-  app.get("/listinstructors", function (req, res) {
+  app.get("/listinstructors", redirectLogin, function (req, res) {
     let sqlquery = "SELECT name, speciality, hourlyRate FROM instructor"; // query database to get all the books
     // execute sql query
     db.query(sqlquery, (err, result) => {
@@ -169,15 +188,12 @@ module.exports = function (app, shopData) {
     });
   });
 
-  //   app.get("/bargainbooks", function (req, res) {
-  //     let sqlquery = "SELECT * FROM books WHERE price < 20";
-  //     db.query(sqlquery, (err, result) => {
-  //       if (err) {
-  //         res.redirect("./");
-  //       }
-  //       let newData = Object.assign({}, shopData, { availableBooks: result });
-  //       console.log(newData);
-  //       res.render("bargains.ejs", newData);
-  //     });
-  //   });
+  app.get("/logout", redirectLogin, (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.redirect("./");
+      }
+      res.redirect("/");
+    });
+  });
 };

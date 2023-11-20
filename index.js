@@ -1,4 +1,6 @@
 // Import the modules we need
+//add sessions
+var session = require("express-session");
 var express = require("express");
 var ejs = require("ejs");
 var bodyParser = require("body-parser");
@@ -11,6 +13,18 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 //    Set up css
 app.use(express.static(__dirname + "/public"));
+
+// Create a session
+app.use(
+  session({
+    secret: "somerandomstuff",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      expires: 600000,
+    },
+  })
+);
 
 // Define the database connections
 const db = mysql.createConnection({
