@@ -52,6 +52,15 @@ module.exports = function (app, shopData) {
   app.post("/registered", function (req, res) {
     const plainPassword = req.body.password;
 
+    //password complexity requirement
+    if (plainPassword.length < 8 || !/[!@$%^&*]/.test(plainPassword)) {
+      return res
+        .status(400)
+        .send(
+          "password must be 8 characters long and contain a special character"
+        );
+    }
+
     // Hash the password using bcrypt
     bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
       if (err) {
