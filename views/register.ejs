@@ -27,11 +27,17 @@
           type="password"
           name="password"
           placeholder="password"
+          onkeyup="checkPassword()"
         />
+        <small id="password-requirements" class="hidden"
+          >Password must be at least 8 characters long and contain at least one
+          special character (!@$%^&*)</small
+        >
       </p>
+      <script src="/jsfunctions/passwordcheck.js"></script>
       <p>
         name:
-        <input id="name" type="name" name="name" placeholder="name" />
+        <input id="name" type="text" name="name" placeholder="name" />
       </p>
       <p>
         Phone Number:
