@@ -4,11 +4,12 @@ USE climbingCo;
 CREATE TABLE instructor (
     instructor_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50),
-    email VARCHAR(50),
+    email VARCHAR(50) UNIQUE,
     phone VARCHAR(50),
     speciality VARCHAR(50),
     availibility BOOLEAN,
-    hourlyRate FLOAT(10)
+    hourlyRate FLOAT(10),
+    hashedPassword VARCHAR(60)
 );
 
 INSERT INTO instructor (name, email, phone, speciality, availibility, hourlyRate) 
@@ -31,7 +32,7 @@ CREATE TABLE event (
 CREATE TABLE customer (
     customer_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50),
-    username VARCHAR(50),
+    username VARCHAR(50) UNIQUE,
     hashedPassword VARCHAR(60),
     email VARCHAR(50),
     phone VARCHAR(50),

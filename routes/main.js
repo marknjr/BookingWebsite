@@ -101,6 +101,50 @@ module.exports = function (app, shopData) {
     });
   });
 
+  app.get("/instructorRegistration", function (req, res) {
+    res.render("instructorRegistration.ejs", shopData);
+  });
+
+  app.post("/instructorRegistered", function (req, res) {
+    const plainPassword = req.body.password;
+
+    if (plainPassword.length < 8 || !/[!@$%^&*]/.test(plainPassword)) {
+      return res
+        .status(400)
+        .send(
+          "Password must be 8 characters long and contain a special character"
+        );
+    }
+
+    bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error registering instructor.");
+      }
+
+      const sql =
+        "INSERT INTO instructor (name, email, phone, speciality, availibility, hourlyRate, hashedPassword) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      const values = [
+        req.body.name,
+        req.body.email,
+        req.body.phone,
+        req.body.speciality,
+        1,
+        req.body.hourlyRate,
+        hashedPassword,
+      ];
+
+      db.query(sql, values, function (error, results, fields) {
+        if (error) {
+          console.error(error);
+          return res.status(500).send("Error registering instructor.");
+        }
+
+        res.send("Instructor " + req.body.name + " is now registered.");
+      });
+    });
+  });
+
   app.get("/login", function (req, res) {
     res.render("login.ejs", shopData);
   });
@@ -108,26 +152,43 @@ module.exports = function (app, shopData) {
   app.post("/loggedin", function (req, res) {
     const { username, password } = req.body;
 
-    const sql = "SELECT * FROM customer WHERE username = ?";
-    db.query(sql, [username], function (error, results) {
+    let sql = "SELECT * FROM customer WHERE username = ?";
+    db.query(sql, [username], function (error, customerResults) {
       if (error) {
         console.error(error);
         return res.status(500).send("Error during login.");
       }
 
-      if (results.length === 0) {
-        // User not found
-        return res.status(401).send("Invalid username or password.");
-      }
+      if (customerResults.length > 0) {
+        //verify password
+        verifyUser(customerResults[0]);
+      } else {
+        // check instructor table
+        sql = "SELECT * FROM instructor WHERE email = ?";
+        db.query(sql, [username], function (error, instructorResults) {
+          if (error) {
+            console.error(error);
+            return res.status(500).send("Error during login.");
+          }
 
-      const user = results[0];
+          if (instructorResults.length > 0) {
+            verifyUser(instructorResults[0]);
+          } else {
+            // User not found
+            res.status(401).send("Invalid username or password.");
+          }
+        });
+      }
+    });
+
+    function verifyUser(user) {
       bcrypt.compare(password, user.hashedPassword, function (err, result) {
         if (err) {
           console.error(err);
           return res.status(500).send("Error during login.");
         } else if (result == true) {
           console.log("user logged in");
-          req.session.userId = req.body.username;
+          req.session.userId = user.username || user.email; // Use email for instructors as username
 
           // Redirect to the homepage after successful login
           res.redirect("/");
@@ -136,7 +197,7 @@ module.exports = function (app, shopData) {
           res.status(401).send("Invalid username or password.");
         }
       });
-    });
+    }
   });
 
   app.get("/list", redirectLogin, function (req, res) {
