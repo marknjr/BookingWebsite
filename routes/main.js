@@ -13,8 +13,8 @@ module.exports = function (app, shopData) {
   const addLoginStatus = (req, res, next) => {
     res.locals.isLoggedIn = !!req.session.userId;
     if (req.session.userId) {
-      res.locals.username = req.session.userId;
-      res.locals.userType = req.session.userType; //added usertype in session
+      res.locals.username = req.session.userIdentifier; // Use userIdentifier here
+      res.locals.userType = req.session.userType;
     }
     next();
   };
@@ -23,8 +23,16 @@ module.exports = function (app, shopData) {
 
   // Handle our routes
   app.get("/", function (req, res) {
-    res.render("index.ejs", shopData);
+    //pass local variables so username or email can show on landing page
+    let locals = {
+      shopName: shopData.shopName,
+      isLoggedIn: req.session.userId ? true : false,
+      userIdentifier: req.session.userIdentifier,
+      userType: req.session.userType,
+    };
+    res.render("index.ejs", locals);
   });
+
   app.get("/about", function (req, res) {
     res.render("about.ejs", shopData);
   });
@@ -188,10 +196,13 @@ module.exports = function (app, shopData) {
           console.error(err);
           return res.status(500).send("Error during login.");
         } else if (result) {
-          console.log(
-            `${fromInstructorTable ? "Instructor" : "Customer"} logged in`
-          );
-          req.session.userId = fromInstructorTable ? user.email : user.username;
+          // Set session variables
+          req.session.userId = fromInstructorTable
+            ? user.instructor_id
+            : user.customer_id;
+          req.session.userIdentifier = fromInstructorTable
+            ? user.email
+            : user.username;
           req.session.userType = fromInstructorTable
             ? "instructor"
             : "customer";
@@ -211,10 +222,11 @@ module.exports = function (app, shopData) {
       db.query(sqlquery, (err, result) => {
         if (err) {
           res.redirect("./");
+        } else {
+          let newData = Object.assign({}, shopData, { events: result });
+          console.log(newData);
+          res.render("list.ejs", newData);
         }
-        let newData = Object.assign({}, shopData, { events: result });
-        console.log(newData);
-        res.render("list.ejs", newData);
       });
     });
 
@@ -240,11 +252,74 @@ module.exports = function (app, shopData) {
       });
     });
 
-    app.post("/eventadded", function (req, res) {
-      let sqlquery =
-        "INSERT INTO event (eventType, dateOfEvent, timeOfEvent, location, maxAttendees, price) VALUES (?,?,?,?,?,?)";
+    app.post("/enlistEvent", redirectLogin, function (req, res) {
+      if (req.session.userType !== "customer") {
+        return res.status(403).send("Only customers can enlist in events.");
+      }
 
-      let newrecord = [
+      const sql =
+        "INSERT INTO bookings (customer_id, event_id, bookingDate) VALUES (?, ?, NOW())";
+      db.query(
+        sql,
+        [req.session.userId, req.body.eventId],
+        function (error, results) {
+          if (error) {
+            console.error(error);
+            return res.status(500).send("Error enlisting in event.");
+          }
+          res.redirect("/myEvents");
+        }
+      );
+    });
+
+    app.get("/myevents", redirectLogin, function (req, res) {
+      // Example query to get events. Modify as per your actual database structure and requirements.
+      let sqlquery = "SELECT * FROM event WHERE instructor_id = ?";
+      db.query(sqlquery, [req.session.userId], (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.redirect("./");
+        }
+
+        console.log(result);
+
+        // Pass the fetched events as 'myEvents' to the EJS template
+        let locals = {
+          shopName: shopData.shopName,
+          myEvents: result,
+          userType: req.session.userType,
+          userId: req.session.userId,
+          userIdentifier: req.session.userIdentifier,
+        };
+        res.render("myevents.ejs", locals);
+      });
+    });
+
+    app.post("/deleteEvent", redirectLogin, (req, res) => {
+      if (req.session.userType !== "instructor") {
+        return res.status(403).send("Unauthorized access.");
+      }
+      const eventId = req.body.eventId;
+      const sqlQuery =
+        "DELETE FROM event WHERE event_id = ? AND instructor_id = ?";
+      db.query(sqlQuery, [eventId, req.session.userId], (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send("Error deleting event.");
+        }
+        res.redirect("/myevents");
+      });
+    });
+
+    app.post("/eventadded", redirectLogin, function (req, res) {
+      if (req.session.userType !== "instructor") {
+        return res.status(403).send("Only instructors can add events.");
+      }
+
+      let sqlQuery =
+        "INSERT INTO event (instructor_id, eventType, dateOfEvent, timeOfEvent, location, maxAttendees, price) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      let newRecord = [
+        req.session.userId,
         req.body.eventType,
         req.body.dateOfEvent,
         req.body.timeOfEvent,
@@ -252,18 +327,13 @@ module.exports = function (app, shopData) {
         req.body.maxAttendees,
         req.body.price,
       ];
-      db.query(sqlquery, newrecord, (err, result) => {
+
+      db.query(sqlQuery, newRecord, (err, result) => {
         if (err) {
-          return console.error(err.message);
-        } else
-          res.send(
-            " This event is added to database, eventType: " +
-              req.body.eventType +
-              " Date: " +
-              req.body.dateOfEvent +
-              " Price: " +
-              req.body.price
-          );
+          console.error(err.message);
+          return res.status(500).send("Error adding event.");
+        }
+        res.send("Event successfully added.");
       });
     });
 

@@ -1,25 +1,24 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Welcome to <%=shopName%></title>
+    <title>My Events - <%= shopName %></title>
     <link rel="stylesheet" type="text/css" href="/main.css" />
   </head>
   <body>
-    <h1><%=shopName%> Shop</h1>
-    <h2>Here are the events we host:</h2>
+    <h1>My Events at <%= shopName %></h1>
     <ul>
-      <% events.forEach(function(event) { %>
+      <% myEvents.forEach(function(event) { %>
       <li>
         <strong>Event:</strong> <%= event.eventType %> <br />
         <strong>Date:</strong> <%= event.dateOfEvent %> <br />
         <strong>Time:</strong> <%= event.timeOfEvent %> <br />
         <strong>Location:</strong> <%= event.location %> <br />
         <strong>Max Participants:</strong> <%= event.maxAttendees %> <br />
-        <strong>Price:</strong> £<%= event.price %> <% if (isLoggedIn &&
-        userType === 'customer') { %>
-        <form action="/enlistEvent" method="post">
+        <strong>Price:</strong> £<%= event.price %> <br />
+        <% if (userType === 'instructor' && event.instructor_id === userId) { %>
+        <form action="/deleteEvent" method="post">
           <input type="hidden" name="eventId" value="<%= event.event_id %>" />
-          <input type="submit" value="Enlist" />
+          <input type="submit" value="Delete Event" />
         </form>
         <% } %>
       </li>
