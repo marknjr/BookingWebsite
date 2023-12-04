@@ -16,9 +16,10 @@
     <p><a href="about">About <%=shopName%></a></p>
     <p><a href="search">Search for events</a></p>
 
-    <% if (isLoggedIn) { %>
-
+    <% if (isLoggedIn) { %> <% if (userType === 'instructor') { %>
     <p><a href="addevent">Add a new event</a></p>
+    <% } %>
+
     <p><a href="list">List events</a></p>
 
     <p><a href="listinstructors">List the instructors</a></p>

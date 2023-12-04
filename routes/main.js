@@ -14,6 +14,7 @@ module.exports = function (app, shopData) {
     res.locals.isLoggedIn = !!req.session.userId;
     if (req.session.userId) {
       res.locals.username = req.session.userId;
+      res.locals.userType = req.session.userType; //added usertype in session
     }
     next();
   };
@@ -161,7 +162,7 @@ module.exports = function (app, shopData) {
 
       if (customerResults.length > 0) {
         //verify password
-        verifyUser(customerResults[0]);
+        verifyUser(customerResults[0], false);
       } else {
         // check instructor table
         sql = "SELECT * FROM instructor WHERE email = ?";
@@ -172,7 +173,7 @@ module.exports = function (app, shopData) {
           }
 
           if (instructorResults.length > 0) {
-            verifyUser(instructorResults[0]);
+            verifyUser(instructorResults[0], true);
           } else {
             // User not found
             res.status(401).send("Invalid username or password.");
@@ -181,89 +182,99 @@ module.exports = function (app, shopData) {
       }
     });
 
-    function verifyUser(user) {
+    function verifyUser(user, fromInstructorTable) {
       bcrypt.compare(password, user.hashedPassword, function (err, result) {
         if (err) {
           console.error(err);
           return res.status(500).send("Error during login.");
-        } else if (result == true) {
-          console.log("user logged in");
-          req.session.userId = user.username || user.email; // Use email for instructors as username
+        } else if (result) {
+          console.log(
+            `${fromInstructorTable ? "Instructor" : "Customer"} logged in`
+          );
+          req.session.userId = fromInstructorTable ? user.email : user.username;
+          req.session.userType = fromInstructorTable
+            ? "instructor"
+            : "customer";
 
-          // Redirect to the homepage after successful login
+          console.log("User Type Set: ", req.session.userType); // Debug line
+
           res.redirect("/");
         } else {
-          // incorrect pass
           res.status(401).send("Invalid username or password.");
         }
       });
     }
-  });
 
-  app.get("/list", redirectLogin, function (req, res) {
-    let sqlquery = "SELECT * FROM event"; // query database to get all the books
-    // execute sql query
-    db.query(sqlquery, (err, result) => {
-      if (err) {
-        res.redirect("./");
-      }
-      let newData = Object.assign({}, shopData, { events: result });
-      console.log(newData);
-      res.render("list.ejs", newData);
+    app.get("/list", redirectLogin, function (req, res) {
+      let sqlquery = "SELECT * FROM event";
+
+      db.query(sqlquery, (err, result) => {
+        if (err) {
+          res.redirect("./");
+        }
+        let newData = Object.assign({}, shopData, { events: result });
+        console.log(newData);
+        res.render("list.ejs", newData);
+      });
     });
-  });
 
-  app.get("/addevent", redirectLogin, function (req, res) {
-    res.render("addevent.ejs", shopData);
-  });
+    app.get("/addevent", redirectLogin, function (req, res) {
+      console.log("Session: ", req.session); // Debug line
 
-  app.get("/listinstructors", redirectLogin, function (req, res) {
-    let sqlquery = "SELECT name, speciality, hourlyRate FROM instructor"; // query database to get all the books
-    // execute sql query
-    db.query(sqlquery, (err, result) => {
-      if (err) {
-        res.redirect("./");
+      if (req.session.userType !== "instructor") {
+        return res.status(403).send("Only instructors can add events.");
       }
-      let newData = Object.assign({}, shopData, { instructor: result });
-      console.log(newData);
-      res.render("listinstructors.ejs", newData);
+      res.render("addevent.ejs", shopData);
     });
-  });
 
-  app.post("/eventadded", function (req, res) {
-    // saving data in database
-    let sqlquery =
-      "INSERT INTO event (eventType, dateOfEvent, timeOfEvent, location, maxAttendees, price) VALUES (?,?,?,?,?,?)";
-    // execute sql query
-    let newrecord = [
-      req.body.eventType,
-      req.body.dateOfEvent,
-      req.body.timeOfEvent,
-      req.body.location,
-      req.body.maxAttendees,
-      req.body.price,
-    ];
-    db.query(sqlquery, newrecord, (err, result) => {
-      if (err) {
-        return console.error(err.message);
-      } else
-        res.send(
-          " This event is added to database, eventType: " +
-            req.body.eventType +
-            " Date: " +
-            req.body.dateOfEvent +
-            " Price: " +
-            req.body.price
-        );
+    app.get("/listinstructors", redirectLogin, function (req, res) {
+      let sqlquery = "SELECT name, speciality, hourlyRate FROM instructor";
+
+      db.query(sqlquery, (err, result) => {
+        if (err) {
+          res.redirect("./");
+        }
+        let newData = Object.assign({}, shopData, { instructor: result });
+        console.log(newData);
+        res.render("listinstructors.ejs", newData);
+      });
     });
-  });
 
-  app.get("/logout", redirectLogin, (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.redirect("./");
-      }
-      res.redirect("/");
+    app.post("/eventadded", function (req, res) {
+      let sqlquery =
+        "INSERT INTO event (eventType, dateOfEvent, timeOfEvent, location, maxAttendees, price) VALUES (?,?,?,?,?,?)";
+
+      let newrecord = [
+        req.body.eventType,
+        req.body.dateOfEvent,
+        req.body.timeOfEvent,
+        req.body.location,
+        req.body.maxAttendees,
+        req.body.price,
+      ];
+      db.query(sqlquery, newrecord, (err, result) => {
+        if (err) {
+          return console.error(err.message);
+        } else
+          res.send(
+            " This event is added to database, eventType: " +
+              req.body.eventType +
+              " Date: " +
+              req.body.dateOfEvent +
+              " Price: " +
+              req.body.price
+          );
+      });
+    });
+
+    app.get("/logout", redirectLogin, (req, res) => {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session: ", err);
+          return res.redirect("/");
+        }
+        res.redirect("/");
+      });
     });
   });
 };
