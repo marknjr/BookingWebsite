@@ -217,14 +217,16 @@ module.exports = function (app, shopData) {
     }
 
     app.get("/list", redirectLogin, function (req, res) {
-      let sqlquery = "SELECT * FROM event";
+      let sqlquery = `
+        SELECT e.*, 
+               (SELECT COUNT(*) FROM bookings b WHERE b.event_id = e.event_id) AS currentParticipants 
+        FROM event e`;
 
       db.query(sqlquery, (err, result) => {
         if (err) {
           res.redirect("./");
         } else {
           let newData = Object.assign({}, shopData, { events: result });
-          console.log(newData);
           res.render("list.ejs", newData);
         }
       });
@@ -257,29 +259,55 @@ module.exports = function (app, shopData) {
         return res.status(403).send("Only customers can enlist in events.");
       }
 
-      const sql =
-        "INSERT INTO bookings (customer_id, event_id, bookingDate) VALUES (?, ?, NOW())";
-      db.query(
-        sql,
-        [req.session.userId, req.body.eventId],
-        function (error, results) {
-          if (error) {
-            console.error(error);
-            return res.status(500).send("Error enlisting in event.");
-          }
-          res.redirect("/myEvents");
+      const eventId = req.body.eventId;
+
+      const checkCapacitySql =
+        "SELECT maxAttendees, (SELECT COUNT(*) FROM bookings WHERE event_id = ?) as currentBookings FROM event WHERE event_id = ?";
+
+      db.query(checkCapacitySql, [eventId, eventId], function (err, results) {
+        if (err) {
+          console.error(err);
+          return res.status(500).send("Error checking event capacity.");
         }
-      );
+
+        if (
+          results.length > 0 &&
+          results[0].currentBookings < results[0].maxAttendees
+        ) {
+          const sql =
+            "INSERT INTO bookings (customer_id, event_id, bookingDate) VALUES (?, ?, NOW())";
+          db.query(
+            sql,
+            [req.session.userId, eventId],
+            function (error, bookingResults) {
+              if (error) {
+                console.error(error);
+                return res.status(500).send("Error enlisting in event.");
+              }
+              res.redirect("/myEvents");
+            }
+          );
+        } else {
+          res.send("Sorry, this event has reached its maximum capacity.");
+        }
+      });
     });
 
     app.get("/myevents", redirectLogin, function (req, res) {
       let sqlquery = "";
 
       if (req.session.userType === "instructor") {
-        sqlquery = "SELECT * FROM event WHERE instructor_id = ?";
+        sqlquery = `
+      SELECT e.*, 
+             (SELECT COUNT(*) FROM bookings b WHERE b.event_id = e.event_id) AS currentParticipants 
+      FROM event e WHERE e.instructor_id = ?`;
       } else if (req.session.userType === "customer") {
-        sqlquery =
-          "SELECT e.* FROM event e INNER JOIN bookings b ON e.event_id = b.event_id WHERE b.customer_id = ?";
+        sqlquery = `
+    SELECT e.*, 
+           (SELECT COUNT(*) FROM bookings b WHERE b.event_id = e.event_id) AS currentParticipants 
+    FROM event e
+    INNER JOIN bookings b ON e.event_id = b.event_id
+    WHERE b.customer_id = ?`;
       }
 
       db.query(sqlquery, [req.session.userId], (err, result) => {
@@ -342,6 +370,67 @@ module.exports = function (app, shopData) {
           }
         );
       });
+    });
+
+    app.get("/editevent", redirectLogin, function (req, res) {
+      if (req.session.userType !== "instructor") {
+        return res.status(403).send("Unauthorized access.");
+      }
+
+      const eventId = req.query.eventId;
+      const sqlQuery =
+        "SELECT * FROM event WHERE event_id = ? AND instructor_id = ?";
+
+      db.query(sqlQuery, [eventId, req.session.userId], (err, result) => {
+        if (err || result.length === 0) {
+          return res.status(404).send("Event not found or access denied.");
+        }
+        res.render("editevent.ejs", {
+          event: result[0],
+          shopName: shopData.shopName,
+        });
+      });
+    });
+
+    app.post("/eventupdated", redirectLogin, function (req, res) {
+      if (req.session.userType !== "instructor") {
+        return res.status(403).send("Unauthorized access.");
+      }
+
+      const {
+        eventId,
+        eventType,
+        dateOfEvent,
+        timeOfEvent,
+        location,
+        maxAttendees,
+        price,
+      } = req.body;
+
+      const sqlQuery =
+        "UPDATE event SET eventType = ?, dateOfEvent = ?, timeOfEvent = ?, location = ?, maxAttendees = ?, price = ? WHERE event_id = ? AND instructor_id = ?";
+
+      db.query(
+        sqlQuery,
+        [
+          eventType,
+          dateOfEvent,
+          timeOfEvent,
+          location,
+          maxAttendees,
+          price,
+          eventId,
+          req.session.userId,
+        ],
+        (err, result) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Error updating event: " + err.message);
+          }
+
+          res.redirect("/myevents");
+        }
+      );
     });
 
     app.post("/eventadded", redirectLogin, function (req, res) {

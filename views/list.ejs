@@ -15,8 +15,9 @@
         <strong>Time:</strong> <%= event.timeOfEvent %> <br />
         <strong>Location:</strong> <%= event.location %> <br />
         <strong>Max Participants:</strong> <%= event.maxAttendees %> <br />
-        <strong>Price:</strong> £<%= event.price %> <% if (isLoggedIn &&
-        userType === 'customer') { %>
+        <strong>Current Participants:</strong> <%= event.currentParticipants %>
+        / <%= event.maxAttendees %> <strong>Price:</strong> £<%= event.price %>
+        <% if (isLoggedIn && userType === 'customer') { %>
         <form action="/enlistEvent" method="post">
           <input type="hidden" name="eventId" value="<%= event.event_id %>" />
           <input type="submit" value="Enlist" />

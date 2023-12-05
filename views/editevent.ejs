@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Edit Event - <%= shopName %></title>
+    <link rel="stylesheet" type="text/css" href="/main.css" />
+  </head>
+  <body>
+    <h1>Edit Event for <%= shopName %></h1>
+    <form method="POST" action="/eventupdated">
+      <input type="hidden" name="eventId" value="<%= event.event_id %>" />
+
+      <p>
+        Event Type:
+        <input
+          type="text"
+          name="eventType"
+          value="<%= event.eventType %>"
+          required
+        />
+      </p>
+
+      <p>
+        Date of Event:
+        <input
+          type="date"
+          name="dateOfEvent"
+          value="<%= event.dateOfEvent.toISOString().split('T')[0] %>"
+          required
+        />
+      </p>
+
+      <p>
+        Time of Event:
+        <input
+          type="time"
+          name="timeOfEvent"
+          value="<%= event.timeOfEvent %>"
+          required
+        />
+      </p>
+
+      <p>
+        Location:
+        <input
+          type="text"
+          name="location"
+          value="<%= event.location %>"
+          required
+        />
+      </p>
+
+      <p>
+        Maximum Attendees:
+        <input
+          type="number"
+          name="maxAttendees"
+          value="<%= event.maxAttendees %>"
+          required
+        />
+      </p>
+
+      <p>
+        Price:
+        <input type="text" name="price" value="<%= event.price %>" required />
+      </p>
+
+      <input type="submit" value="Update Event" />
+    </form>
+  </body>
+</html>
