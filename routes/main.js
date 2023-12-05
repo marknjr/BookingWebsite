@@ -273,17 +273,21 @@ module.exports = function (app, shopData) {
     });
 
     app.get("/myevents", redirectLogin, function (req, res) {
-      // Example query to get events. Modify as per your actual database structure and requirements.
-      let sqlquery = "SELECT * FROM event WHERE instructor_id = ?";
+      let sqlquery = "";
+
+      if (req.session.userType === "instructor") {
+        sqlquery = "SELECT * FROM event WHERE instructor_id = ?";
+      } else if (req.session.userType === "customer") {
+        sqlquery =
+          "SELECT e.* FROM event e INNER JOIN bookings b ON e.event_id = b.event_id WHERE b.customer_id = ?";
+      }
+
       db.query(sqlquery, [req.session.userId], (err, result) => {
         if (err) {
           console.error(err);
           return res.redirect("./");
         }
 
-        console.log(result);
-
-        // Pass the fetched events as 'myEvents' to the EJS template
         let locals = {
           shopName: shopData.shopName,
           myEvents: result,
@@ -295,19 +299,48 @@ module.exports = function (app, shopData) {
       });
     });
 
+    app.post("/dropEvent", redirectLogin, (req, res) => {
+      if (req.session.userType !== "customer") {
+        return res.status(403).send("Unauthorized access.");
+      }
+      const eventId = req.body.eventId;
+      const sqlQuery =
+        "DELETE FROM bookings WHERE event_id = ? AND customer_id = ?";
+      db.query(sqlQuery, [eventId, req.session.userId], (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send("Error dropping out of event.");
+        }
+        res.redirect("/myevents");
+      });
+    });
+
     app.post("/deleteEvent", redirectLogin, (req, res) => {
       if (req.session.userType !== "instructor") {
         return res.status(403).send("Unauthorized access.");
       }
       const eventId = req.body.eventId;
-      const sqlQuery =
-        "DELETE FROM event WHERE event_id = ? AND instructor_id = ?";
-      db.query(sqlQuery, [eventId, req.session.userId], (err, result) => {
+
+      const deleteBookingsSql = "DELETE FROM bookings WHERE event_id = ?";
+      db.query(deleteBookingsSql, [eventId], (err, result) => {
         if (err) {
           console.error(err);
-          return res.status(500).send("Error deleting event.");
+          return res.status(500).send("Error deleting bookings for the event.");
         }
-        res.redirect("/myevents");
+
+        const deleteEventSql =
+          "DELETE FROM event WHERE event_id = ? AND instructor_id = ?";
+        db.query(
+          deleteEventSql,
+          [eventId, req.session.userId],
+          (err, result) => {
+            if (err) {
+              console.error(err);
+              return res.status(500).send("Error deleting event.");
+            }
+            res.redirect("/myevents");
+          }
+        );
       });
     });
 

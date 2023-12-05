@@ -15,7 +15,13 @@
         <strong>Location:</strong> <%= event.location %> <br />
         <strong>Max Participants:</strong> <%= event.maxAttendees %> <br />
         <strong>Price:</strong> £<%= event.price %> <br />
-        <% if (userType === 'instructor' && event.instructor_id === userId) { %>
+        <% if (userType === 'customer') { %>
+        <form action="/dropEvent" method="post">
+          <input type="hidden" name="eventId" value="<%= event.event_id %>" />
+          <input type="submit" value="Drop Out" />
+        </form>
+        <% } %> <% if (userType === 'instructor' && event.instructor_id ===
+        userId) { %>
         <form action="/deleteEvent" method="post">
           <input type="hidden" name="eventId" value="<%= event.event_id %>" />
           <input type="submit" value="Delete Event" />
