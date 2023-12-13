@@ -12,10 +12,8 @@ module.exports = function (app, shopData) {
 
   const addLoginStatus = (req, res, next) => {
     res.locals.isLoggedIn = !!req.session.userId;
-    if (req.session.userId) {
-      res.locals.username = req.session.userIdentifier; // Use userIdentifier here
-      res.locals.userType = req.session.userType;
-    }
+    res.locals.username = req.session.userIdentifier || "Guest";
+    res.locals.userType = req.session.userType || "guest";
     next();
   };
 
@@ -36,22 +34,32 @@ module.exports = function (app, shopData) {
   app.get("/about", function (req, res) {
     res.render("about.ejs", shopData);
   });
-  app.get("/search", function (req, res) {
-    res.render("search.ejs", shopData);
+  app.get("/search", redirectLogin, function (req, res) {
+    res.render("search.ejs", {
+      shopName: shopData.shopName,
+      isLoggedIn: req.session.userId ? true : false,
+      userType: req.session.userType,
+      userIdentifier: req.session.userIdentifier,
+    });
   });
   app.get("/search-result", function (req, res) {
-    //searching in the database
-    //res.send("You searched for: " + req.query.keyword);
-    let sqlquery =
-      "SELECT * FROM event WHERE eventType LIKE '%" + req.query.keyword + "%'"; // query database to get all the books
-    // execute sql query
-    db.query(sqlquery, (err, result) => {
+    const keyword = req.query.keyword;
+
+    const sqlquery = "SELECT * FROM event WHERE eventType LIKE ?";
+
+    db.query(sqlquery, ["%" + keyword + "%"], function (err, result) {
       if (err) {
-        res.redirect("./");
+        console.error("Error executing search query: ", err);
+        return res.status(500).send("Error executing search query.");
       }
-      let newData = Object.assign({}, shopData, { availableEvents: result });
-      console.log(newData);
-      res.render("list.ejs", newData);
+
+      res.render("list.ejs", {
+        shopName: shopData.shopName,
+        isLoggedIn: req.session.userId ? true : false,
+        userType: req.session.userType,
+        userIdentifier: req.session.userIdentifier,
+        events: result,
+      });
     });
   });
 
@@ -217,17 +225,21 @@ module.exports = function (app, shopData) {
     }
 
     app.get("/list", redirectLogin, function (req, res) {
-      let sqlquery = `
-        SELECT e.*, 
-               (SELECT COUNT(*) FROM bookings b WHERE b.event_id = e.event_id) AS currentParticipants 
-        FROM event e`;
+      let sqlquery =
+        "SELECT e.*, (SELECT COUNT(*) FROM bookings WHERE event_id = e.event_id) AS currentParticipants FROM event e";
 
-      db.query(sqlquery, (err, result) => {
+      db.query(sqlquery, function (err, events) {
         if (err) {
-          res.redirect("./");
+          console.error(err);
+          res.redirect("/");
         } else {
-          let newData = Object.assign({}, shopData, { events: result });
-          res.render("list.ejs", newData);
+          res.render("list.ejs", {
+            shopName: shopData.shopName,
+            isLoggedIn: req.session.userId ? true : false,
+            userType: req.session.userType,
+            userIdentifier: req.session.userIdentifier,
+            events: events,
+          });
         }
       });
     });
@@ -238,7 +250,13 @@ module.exports = function (app, shopData) {
       if (req.session.userType !== "instructor") {
         return res.status(403).send("Only instructors can add events.");
       }
-      res.render("addevent.ejs", shopData);
+      res.render("addevent.ejs", {
+        shopName: shopData.shopName,
+        isLoggedIn: req.session.userId ? true : false,
+        userType: req.session.userType,
+        userIdentifier: req.session.userIdentifier,
+        events: result,
+      });
     });
 
     app.get("/listinstructors", redirectLogin, function (req, res) {
@@ -323,7 +341,13 @@ module.exports = function (app, shopData) {
           userId: req.session.userId,
           userIdentifier: req.session.userIdentifier,
         };
-        res.render("myevents.ejs", locals);
+        res.render("myevents.ejs", {
+          shopName: shopData.shopName,
+          isLoggedIn: req.session.userId ? true : false,
+          userType: req.session.userType,
+          userIdentifier: req.session.userIdentifier,
+          events: result,
+        });
       });
     });
 
@@ -459,13 +483,13 @@ module.exports = function (app, shopData) {
       });
     });
 
-    app.get("/logout", redirectLogin, (req, res) => {
+    app.get("/logout", function (req, res) {
       req.session.destroy((err) => {
         if (err) {
           console.error("Error destroying session: ", err);
-          return res.redirect("/");
         }
-        res.redirect("/");
+        res.clearCookie("connect.sid");
+        res.redirect("/login");
       });
     });
   });

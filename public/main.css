@@ -99,3 +99,13 @@ input[type="submit"]:hover {
 .hidden {
   display: none;
 }
+
+nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+nav ul li {
+  display: inline;
+  margin-right: 10px;
+}
