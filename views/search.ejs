@@ -5,11 +5,10 @@
     <link rel="stylesheet" type="text/css" href="/main.css" />
   </head>
   <body>
-    <%- include('_navbar') %>
     <h1>Search <%=shopName%></h1>
     <form action="/search-result" method="GET">
-      <p>What event are you looking for?</p>
-      <input type="text" name="keyword" placeholder="Search events" />
+      <p>What event do you want?</p>
+      <input id="search-box" type="text" name="keyword" value="Default" />
       <input type="submit" value="Search" />
     </form>
   </body>
