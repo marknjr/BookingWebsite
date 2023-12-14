@@ -508,6 +508,22 @@ module.exports = function (app, shopData) {
       });
     });
 
+    const request = require("request");
+
+    app.get("/getWeather", function (req, res) {
+      const city = req.query.city;
+      const apiKey = "0f05f4050e1b8e48a8bfa7b75ba1bc64";
+      const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+
+      request(url, function (err, response, body) {
+        if (err) {
+          console.error("Error:", err);
+          return res.status(500).send({ error: "Error fetching weather data" });
+        }
+        res.json(JSON.parse(body));
+      });
+    });
+
     app.get("/logout", redirectLogin, (req, res) => {
       req.session.destroy((err) => {
         if (err) {

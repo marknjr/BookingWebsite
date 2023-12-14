@@ -26,5 +26,44 @@
       </li>
       <% }) %>
     </ul>
+
+    <form id="weatherForm">
+      <input type="text" id="cityName" placeholder="Enter City Name" />
+      <button type="submit">Check Weather</button>
+    </form>
+
+    <div id="weatherResult"></div>
+
+    <script>
+      document.getElementById("weatherForm").onsubmit = function (event) {
+        event.preventDefault();
+        var city = document.getElementById("cityName").value;
+        fetch(`/getWeather?city=${city}`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.cod === 200) {
+              const weather = data.weather[0];
+              const main = data.main;
+              const wind = data.wind;
+              const weatherInfo = `
+                    <h3>Weather in ${data.name}</h3>
+                    <p><strong>Condition:</strong> ${weather.main} (${weather.description})</p>
+                    <p><strong>Temperature:</strong> ${main.temp}°C (feels like ${main.feels_like}°C)</p>
+                    <p><strong>Humidity:</strong> ${main.humidity}%</p>
+                    <p><strong>Wind:</strong> ${wind.speed} m/s at ${wind.deg} degrees</p>
+                  `;
+              document.getElementById("weatherResult").innerHTML = weatherInfo;
+            } else {
+              document.getElementById("weatherResult").innerText =
+                "Weather data not available for this location.";
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            document.getElementById("weatherResult").innerText =
+              "An error occurred while fetching weather data.";
+          });
+      };
+    </script>
   </body>
 </html>
