@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Search <%=shopName%></title>
+    <title>Search <%= shopName %></title>
     <link rel="stylesheet" type="text/css" href="/main.css" />
   </head>
   <body>
-    <h1>Search <%=shopName%></h1>
+    <h1>Search Events at <%= shopName %></h1>
     <form action="/search-result" method="GET">
-      <p>What event do you want?</p>
-      <input id="search-box" type="text" name="keyword" value="Default" />
+      <p>Search by event title:</p>
+      <input
+        id="search-box"
+        type="text"
+        name="keyword"
+        placeholder="Enter event title"
+      />
       <input type="submit" value="Search" />
     </form>
   </body>

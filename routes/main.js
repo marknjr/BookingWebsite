@@ -41,17 +41,18 @@ module.exports = function (app, shopData) {
     res.render("search.ejs", shopData);
   });
   app.get("/search-result", function (req, res) {
-    //searching in the database
-    //res.send("You searched for: " + req.query.keyword);
+    const keyword = req.query.keyword;
     let sqlquery =
-      "SELECT * FROM event WHERE eventType LIKE '%" + req.query.keyword + "%'"; // query database to get all the books
-    // execute sql query
+      "SELECT * FROM event WHERE eventType LIKE '%" + keyword + "%'";
+
     db.query(sqlquery, (err, result) => {
       if (err) {
-        res.redirect("./");
+        console.error("Error while querying the database:", err);
+        return res.status(500).send("Internal Server Error");
       }
-      let newData = Object.assign({}, shopData, { availableEvents: result });
-      console.log(newData);
+
+      let newData = Object.assign({}, shopData, { events: result });
+
       res.render("list.ejs", newData);
     });
   });
@@ -521,6 +522,17 @@ module.exports = function (app, shopData) {
           return res.status(500).send({ error: "Error fetching weather data" });
         }
         res.json(JSON.parse(body));
+      });
+    });
+
+    app.get("/api", function (req, res) {
+      let sqlquery = "SELECT * FROM event";
+      db.query(sqlquery, (err, result) => {
+        if (err) {
+          console.error("Error while querying the database:", err);
+          return res.status(500).send("Internal Server Error");
+        }
+        res.json(result);
       });
     });
 
