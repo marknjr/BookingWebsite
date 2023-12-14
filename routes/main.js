@@ -106,12 +106,7 @@ module.exports = function (app, shopData) {
             return res.status(500).send("Error registering user.");
           }
 
-          const result =
-            "Hello " +
-            req.body.username +
-            " you are now registered! Your password hash is: " +
-            hashedPassword;
-          res.send(result);
+          res.redirect("/");
         });
       });
     }
@@ -279,37 +274,57 @@ module.exports = function (app, shopData) {
       }
 
       const eventId = req.body.eventId;
+      const customerId = req.session.userId;
 
-      const checkCapacitySql =
-        "SELECT maxAttendees, (SELECT COUNT(*) FROM bookings WHERE event_id = ?) as currentBookings FROM event WHERE event_id = ?";
+      const checkEnlistmentSql =
+        "SELECT * FROM bookings WHERE customer_id = ? AND event_id = ?";
+      db.query(
+        checkEnlistmentSql,
+        [customerId, eventId],
+        function (err, bookingResults) {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Error checking existing booking.");
+          }
 
-      db.query(checkCapacitySql, [eventId, eventId], function (err, results) {
-        if (err) {
-          console.error(err);
-          return res.status(500).send("Error checking event capacity.");
-        }
+          if (bookingResults.length > 0) {
+            return res.send("You have already enlisted in this event.");
+          } else {
+            const checkCapacitySql =
+              "SELECT maxAttendees, (SELECT COUNT(*) FROM bookings WHERE event_id = ?) as currentBookings FROM event WHERE event_id = ?";
+            db.query(
+              checkCapacitySql,
+              [eventId, eventId],
+              function (err, results) {
+                if (err) {
+                  console.error(err);
+                  return res.status(500).send("Error checking event capacity.");
+                }
 
-        if (
-          results.length > 0 &&
-          results[0].currentBookings < results[0].maxAttendees
-        ) {
-          const sql =
-            "INSERT INTO bookings (customer_id, event_id, bookingDate) VALUES (?, ?, NOW())";
-          db.query(
-            sql,
-            [req.session.userId, eventId],
-            function (error, bookingResults) {
-              if (error) {
-                console.error(error);
-                return res.status(500).send("Error enlisting in event.");
+                if (
+                  results.length > 0 &&
+                  results[0].currentBookings < results[0].maxAttendees
+                ) {
+                  const enlistSql =
+                    "INSERT INTO bookings (customer_id, event_id, bookingDate) VALUES (?, ?, NOW())";
+                  db.query(enlistSql, [customerId, eventId], function (error) {
+                    if (error) {
+                      console.error(error);
+                      return res.status(500).send("Error enlisting in event.");
+                    }
+                    res.redirect("/myEvents");
+                  });
+                } else {
+                  // Event is full
+                  res.send(
+                    "Sorry, this event has reached its maximum capacity."
+                  );
+                }
               }
-              res.redirect("/myEvents");
-            }
-          );
-        } else {
-          res.send("Sorry, this event has reached its maximum capacity.");
+            );
+          }
         }
-      });
+      );
     });
 
     app.get("/myevents", redirectLogin, function (req, res) {
