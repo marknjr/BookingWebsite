@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const { check, validationResult } = require("express-validator");
 const saltRounds = 10;
 module.exports = function (app, shopData) {
   //redirects to login page if not logged in
@@ -58,101 +59,119 @@ module.exports = function (app, shopData) {
   app.get("/register", function (req, res) {
     res.render("register.ejs", shopData);
   });
-  app.post("/registered", function (req, res) {
-    const plainPassword = req.body.password;
 
-    //password complexity requirement
-    if (plainPassword.length < 8 || !/[!@$%^&*]/.test(plainPassword)) {
-      return res
-        .status(400)
-        .send(
-          "password must be 8 characters long and contain a special character"
-        );
-    }
-
-    // Hash the password using bcrypt
-    bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Error registering user.");
+  app.post(
+    "/registered",
+    [
+      check("name", "Name is required").notEmpty(),
+      check("username", "Username must be 3+ characters long").isLength({
+        min: 3,
+      }),
+      check("email", "Invalid email").isEmail(),
+      check(
+        "password",
+        "Password must be 8+ characters long and contain a special character"
+      )
+        .isLength({ min: 8 })
+        .matches(/[!@$%^&*]/),
+      check("phone", "Invalid phone number").isMobilePhone(),
+    ],
+    (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
 
-      // Define a SQL query to insert user data into the "users" table
-      const sql =
-        "INSERT INTO customer (name, username, hashedPassword, email, phone, preferredPaymentMethod) VALUES (?, ?, ?, ?, ?, ?)";
-      const values = [
-        req.body.name,
-        req.body.username,
-        hashedPassword,
-        req.body.email,
-        req.body.phone,
-        req.body.preferredPaymentMethod,
-      ];
-
-      // Execute the SQL query to insert the data
-      db.query(sql, values, function (error, results, fields) {
-        if (error) {
-          console.error(error);
+      const plainPassword = req.body.password;
+      bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
+        if (err) {
+          console.error(err);
           return res.status(500).send("Error registering user.");
         }
 
-        // Respond with a success message or redirect to a different page
-        const result =
-          "Hello " +
-          req.body.username +
-          " you are now registered!" +
-          " youre password is:" +
-          plainPassword +
-          " and the hash is: " +
-          hashedPassword;
-        res.send(result);
+        const sql =
+          "INSERT INTO customer (name, username, hashedPassword, email, phone, preferredPaymentMethod) VALUES (?, ?, ?, ?, ?, ?)";
+        const values = [
+          req.body.name,
+          req.body.username,
+          hashedPassword,
+          req.body.email,
+          req.body.phone,
+          req.body.preferredPaymentMethod,
+        ];
+
+        db.query(sql, values, function (error, results, fields) {
+          if (error) {
+            console.error(error);
+            return res.status(500).send("Error registering user.");
+          }
+
+          const result =
+            "Hello " +
+            req.body.username +
+            " you are now registered! Your password hash is: " +
+            hashedPassword;
+          res.send(result);
+        });
       });
-    });
-  });
+    }
+  );
 
   app.get("/instructorRegistration", function (req, res) {
     res.render("instructorRegistration.ejs", shopData);
   });
 
-  app.post("/instructorRegistered", function (req, res) {
-    const plainPassword = req.body.password;
-
-    if (plainPassword.length < 8 || !/[!@$%^&*]/.test(plainPassword)) {
-      return res
-        .status(400)
-        .send(
-          "Password must be 8 characters long and contain a special character"
-        );
-    }
-
-    bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Error registering instructor.");
+  app.post(
+    "/instructorRegistered",
+    [
+      check("name", "Name is required").notEmpty(),
+      check("email", "Invalid email").isEmail(),
+      check("phone", "Invalid phone number").isMobilePhone(),
+      check("speciality", "Speciality is required").notEmpty(),
+      check("hourlyRate", "Hourly rate must be a number").isNumeric(),
+      check(
+        "password",
+        "Password must be 8+ characters long and contain a special character"
+      )
+        .isLength({ min: 8 })
+        .matches(/[!@$%^&*]/),
+    ],
+    function (req, res) {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
 
-      const sql =
-        "INSERT INTO instructor (name, email, phone, speciality, availibility, hourlyRate, hashedPassword) VALUES (?, ?, ?, ?, ?, ?, ?)";
-      const values = [
-        req.body.name,
-        req.body.email,
-        req.body.phone,
-        req.body.speciality,
-        1,
-        req.body.hourlyRate,
-        hashedPassword,
-      ];
-
-      db.query(sql, values, function (error, results, fields) {
-        if (error) {
-          console.error(error);
+      const plainPassword = req.body.password;
+      bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
+        if (err) {
+          console.error(err);
           return res.status(500).send("Error registering instructor.");
         }
 
-        res.send("Instructor " + req.body.name + " is now registered.");
+        const sql =
+          "INSERT INTO instructor (name, email, phone, speciality, availibility, hourlyRate, hashedPassword) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        const values = [
+          req.body.name,
+          req.body.email,
+          req.body.phone,
+          req.body.speciality,
+          1,
+          req.body.hourlyRate,
+          hashedPassword,
+        ];
+
+        db.query(sql, values, function (error, results, fields) {
+          if (error) {
+            console.error(error);
+            return res.status(500).send("Error registering instructor.");
+          }
+
+          res.send("Instructor " + req.body.name + " is now registered.");
+        });
       });
-    });
-  });
+    }
+  );
 
   app.get("/login", function (req, res) {
     res.render("login.ejs", shopData);
