@@ -160,8 +160,7 @@ module.exports = function (app, shopData) {
           return res.status(500).send("Error registering instructor.");
         }
 
-        const sql =
-          "INSERT INTO instructor (name, email, phone, speciality, availibility, hourlyRate, hashedPassword) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        const sql = "CALL AddInstructor(?, ?, ?, ?, ?, ?, ?)";
         const values = [
           sanitizedName,
           sanitizedEmail,
@@ -199,10 +198,8 @@ module.exports = function (app, shopData) {
       }
 
       if (customerResults.length > 0) {
-        //verify password
         verifyUser(customerResults[0], false);
       } else {
-        // check instructor table
         sql = "SELECT * FROM instructor WHERE email = ?";
         db.query(sql, [username], function (error, instructorResults) {
           if (error) {
@@ -213,7 +210,6 @@ module.exports = function (app, shopData) {
           if (instructorResults.length > 0) {
             verifyUser(instructorResults[0], true);
           } else {
-            // User not found
             res.status(401).send("Invalid username or password.");
           }
         });
@@ -321,17 +317,23 @@ module.exports = function (app, shopData) {
                   results.length > 0 &&
                   results[0].currentBookings < results[0].maxAttendees
                 ) {
-                  const enlistSql =
-                    "INSERT INTO bookings (customer_id, event_id, bookingDate) VALUES (?, ?, NOW())";
-                  db.query(enlistSql, [customerId, eventId], function (error) {
-                    if (error) {
-                      console.error(error);
-                      return res.status(500).send("Error enlisting in event.");
+                  const paymentAmount = 0.0;
+                  const paymentStatus = "Pending";
+                  const enlistSql = "CALL EnlistEvent(?, ?, NOW(), ?, ?)";
+                  db.query(
+                    enlistSql,
+                    [customerId, eventId, paymentAmount, paymentStatus],
+                    function (error) {
+                      if (error) {
+                        console.error("Error enlisting in event:", error);
+                        return res
+                          .status(500)
+                          .send("Error enlisting in event.");
+                      }
+                      res.redirect("/myEvents");
                     }
-                    res.redirect("/myEvents");
-                  });
+                  );
                 } else {
-                  // Event is full
                   res.send(
                     "Sorry, this event has reached its maximum capacity."
                   );
@@ -488,21 +490,29 @@ module.exports = function (app, shopData) {
         return res.status(403).send("Only instructors can add events.");
       }
 
-      let sqlQuery =
-        "INSERT INTO event (instructor_id, eventType, dateOfEvent, timeOfEvent, location, maxAttendees, price) VALUES (?, ?, ?, ?, ?, ?, ?)";
-      let newRecord = [
+      const {
+        eventType,
+        dateOfEvent,
+        timeOfEvent,
+        location,
+        maxAttendees,
+        price,
+      } = req.body;
+
+      const sql = "CALL CreateEvent(?, ?, ?, ?, ?, ?, ?)";
+      const values = [
         req.session.userId,
-        req.body.eventType,
-        req.body.dateOfEvent,
-        req.body.timeOfEvent,
-        req.body.location,
-        req.body.maxAttendees,
-        req.body.price,
+        eventType,
+        dateOfEvent,
+        timeOfEvent,
+        location,
+        maxAttendees,
+        price,
       ];
 
-      db.query(sqlQuery, newRecord, (err, result) => {
+      db.query(sql, values, (err, result) => {
         if (err) {
-          console.error(err.message);
+          console.error("Error adding event:", err.message);
           return res.status(500).send("Error adding event.");
         }
         res.send("Event successfully added.");

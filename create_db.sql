@@ -12,6 +12,53 @@ CREATE TABLE instructor (
     hashedPassword VARCHAR(60)
 );
 
+DELIMITER //
+CREATE PROCEDURE AddInstructor(
+    IN p_name VARCHAR(50), 
+    IN p_email VARCHAR(50), 
+    IN p_phone VARCHAR(50), 
+    IN p_speciality VARCHAR(50), 
+    IN p_availibility BOOLEAN, 
+    IN p_hourlyRate FLOAT(10), 
+    IN p_hashedPassword VARCHAR(60))
+BEGIN
+    INSERT INTO instructor (name, email, phone, speciality, availibility, hourlyRate, hashedPassword) 
+    VALUES (p_name, p_email, p_phone, p_speciality, p_availibility, p_hourlyRate, p_hashedPassword);
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE CreateEvent(
+    IN p_instructor_id INT, 
+    IN p_eventType VARCHAR(50), 
+    IN p_dateOfEvent DATE, 
+    IN p_timeOfEvent TIME, 
+    IN p_location VARCHAR(50), 
+    IN p_maxAttendees INT, 
+    IN p_price FLOAT)
+BEGIN
+    INSERT INTO event (instructor_id, eventType, dateOfEvent, timeOfEvent, location, maxAttendees, price) 
+    VALUES (p_instructor_id, p_eventType, p_dateOfEvent, p_timeOfEvent, p_location, p_maxAttendees, p_price);
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE EnlistEvent(
+    IN p_customer_id INT, 
+    IN p_event_id INT, 
+    IN p_bookingDate DATE, 
+    IN p_paymentAmount FLOAT, 
+    IN p_paymentStatus VARCHAR(50))
+BEGIN
+    INSERT INTO bookings (customer_id, event_id, bookingDate, paymentAmount, paymentStatus) 
+    VALUES (p_customer_id, p_event_id, p_bookingDate, p_paymentAmount, p_paymentStatus);
+END //
+DELIMITER ;
+
+
+
+DELIMITER ;
+
 INSERT INTO instructor (name, email, phone, speciality, availibility, hourlyRate) 
 VALUES 
     ('Mark Norman', 'marknorman99@gmail.com', '07493883917', 'Climbing,Fitness', 1, 25.50),
