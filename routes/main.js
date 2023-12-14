@@ -82,7 +82,16 @@ module.exports = function (app, shopData) {
         return res.status(400).json({ errors: errors.array() });
       }
 
+      // Sanitize inputs
+      const sanitizedUsername = req.sanitize(req.body.username);
+      const sanitizedEmail = req.sanitize(req.body.email);
+      const sanitizedName = req.sanitize(req.body.name);
+      const sanitizedPhone = req.sanitize(req.body.phone);
+      const preferredPaymentMethod = req.sanitize(
+        req.body.preferredPaymentMethod
+      );
       const plainPassword = req.body.password;
+
       bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
         if (err) {
           console.error(err);
@@ -92,12 +101,12 @@ module.exports = function (app, shopData) {
         const sql =
           "INSERT INTO customer (name, username, hashedPassword, email, phone, preferredPaymentMethod) VALUES (?, ?, ?, ?, ?, ?)";
         const values = [
-          req.body.name,
-          req.body.username,
+          sanitizedName,
+          sanitizedUsername,
           hashedPassword,
-          req.body.email,
-          req.body.phone,
-          req.body.preferredPaymentMethod,
+          sanitizedEmail,
+          sanitizedPhone,
+          preferredPaymentMethod,
         ];
 
         db.query(sql, values, function (error, results, fields) {
@@ -137,7 +146,13 @@ module.exports = function (app, shopData) {
         return res.status(400).json({ errors: errors.array() });
       }
 
+      const sanitizedName = req.sanitize(req.body.name);
+      const sanitizedEmail = req.sanitize(req.body.email);
+      const sanitizedPhone = req.sanitize(req.body.phone);
+      const sanitizedSpeciality = req.sanitize(req.body.speciality);
+      const sanitizedHourlyRate = req.sanitize(req.body.hourlyRate);
       const plainPassword = req.body.password;
+
       bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
         if (err) {
           console.error(err);
@@ -147,12 +162,12 @@ module.exports = function (app, shopData) {
         const sql =
           "INSERT INTO instructor (name, email, phone, speciality, availibility, hourlyRate, hashedPassword) VALUES (?, ?, ?, ?, ?, ?, ?)";
         const values = [
-          req.body.name,
-          req.body.email,
-          req.body.phone,
-          req.body.speciality,
+          sanitizedName,
+          sanitizedEmail,
+          sanitizedPhone,
+          sanitizedSpeciality,
           1,
-          req.body.hourlyRate,
+          sanitizedHourlyRate,
           hashedPassword,
         ];
 
@@ -162,7 +177,7 @@ module.exports = function (app, shopData) {
             return res.status(500).send("Error registering instructor.");
           }
 
-          res.send("Instructor " + req.body.name + " is now registered.");
+          res.send("Instructor " + sanitizedName + " is now registered.");
         });
       });
     }
