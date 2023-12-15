@@ -5,6 +5,7 @@
     <link rel="stylesheet" type="text/css" href="/main.css" />
   </head>
   <body>
+    <p><a href="/">Home</a></p>
     <h1><%=shopName%> Shop</h1>
     <h2>Here are the events we host:</h2>
     <ul>
@@ -38,7 +39,7 @@
       document.getElementById("weatherForm").onsubmit = function (event) {
         event.preventDefault();
         var city = document.getElementById("cityName").value;
-        fetch(`/getWeather?city=${city}`)
+        fetch(`https://doc.gold.ac.uk/usr/366/getWeather?city=${city}`)
           .then((response) => response.json())
           .then((data) => {
             if (data.cod === 200) {

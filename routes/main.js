@@ -116,7 +116,7 @@ module.exports = function (app, shopData) {
             return res.status(500).send("Error registering user.");
           }
 
-          res.redirect("/");
+          res.redirect("/usr/366");
         });
       });
     }
@@ -235,7 +235,7 @@ module.exports = function (app, shopData) {
 
           console.log("User Type Set: ", req.session.userType); // Debug line
 
-          res.redirect("/");
+          res.redirect("/usr/366");
         } else {
           res.status(401).send("Invalid username or password.");
         }
@@ -250,7 +250,7 @@ module.exports = function (app, shopData) {
 
       db.query(sqlquery, (err, result) => {
         if (err) {
-          res.redirect("./");
+          res.redirect("/usr/366");
         } else {
           let newData = Object.assign({}, shopData, { events: result });
           res.render("list.ejs", newData);
@@ -272,7 +272,7 @@ module.exports = function (app, shopData) {
 
       db.query(sqlquery, (err, result) => {
         if (err) {
-          res.redirect("./");
+          res.redirect("/usr/366");
         }
         let newData = Object.assign({}, shopData, { instructor: result });
         console.log(newData);
@@ -330,7 +330,7 @@ module.exports = function (app, shopData) {
                           .status(500)
                           .send("Error enlisting in event.");
                       }
-                      res.redirect("/myEvents");
+                      res.redirect("/usr/366/myevents");
                     }
                   );
                 } else {
@@ -391,7 +391,7 @@ module.exports = function (app, shopData) {
           console.error(err);
           return res.status(500).send("Error dropping out of event.");
         }
-        res.redirect("/myevents");
+        res.redirect("/usr/366/myevents");
       });
     });
 
@@ -418,7 +418,7 @@ module.exports = function (app, shopData) {
               console.error(err);
               return res.status(500).send("Error deleting event.");
             }
-            res.redirect("/myevents");
+            res.redirect("/usr/366/myevents");
           }
         );
       });
@@ -480,7 +480,7 @@ module.exports = function (app, shopData) {
             return res.status(500).send("Error updating event: " + err.message);
           }
 
-          res.redirect("/myevents");
+          res.redirect("/usr/366/myevents");
         }
       );
     });
@@ -519,9 +519,8 @@ module.exports = function (app, shopData) {
       });
     });
 
-    const request = require("request");
-
     app.get("/getWeather", function (req, res) {
+      const request = require("request");
       const city = req.query.city;
       const apiKey = "0f05f4050e1b8e48a8bfa7b75ba1bc64";
       const url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
@@ -552,7 +551,7 @@ module.exports = function (app, shopData) {
           console.error("Error destroying session: ", err);
           return res.redirect("/");
         }
-        res.redirect("/");
+        res.redirect("/usr/366");
       });
     });
   });

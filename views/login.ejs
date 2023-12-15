@@ -5,10 +5,12 @@
     <link rel="stylesheet" type="text/css" href="/main.css" />
   </head>
   <body>
+    <p><a href="/">Home</a></p>
     <h1>Log in! <%=shopName%></h1>
     <form method="POST" action="/loggedin">
       <p>
-        Username:
+        <strong>Username</strong> to log in as a <strong>Customer</strong> or
+        <strong>Email</strong> to log in as a <strong>Instructor</strong>:
         <input
           id="username"
           type="text"
